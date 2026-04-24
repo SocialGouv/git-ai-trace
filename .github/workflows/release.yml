@@ -1,0 +1,40 @@
+name: 📦 Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+
+      - name: Build skill bundle
+        run: bash scripts/build-skill.sh
+
+      - name: Compute checksum
+        run: |
+          cd dist
+          sha256sum git-ai-trace.skill > git-ai-trace.skill.sha256
+          cat git-ai-trace.skill.sha256
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            dist/git-ai-trace.skill
+            dist/git-ai-trace.skill.sha256

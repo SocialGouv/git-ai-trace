@@ -1,0 +1,13 @@
+{
+  "version": "0.1.0",
+  "organization": "SocialGouv",
+  "date": "2026-04",
+  "abstract": "A Claude Code skill and companion git hooks that embed an honest, observation-only recap of human/AI collaboration inside each commit message. Records only what happened in the chat (proposals, rejections, choices, generations), not inferred or evaluative content. The recap travels with the commit through rebases, squashes, and cherry-picks.",
+  "references": [
+    "https://claude.ai/share/6890bda1-eb81-4371-8ac3-7a0054230a21",
+    "https://tcp-up.org/",
+    "https://github.com/ismet55555/ai-attribution",
+    "https://github.com/melissawm/open-source-ai-contribution-policies",
+    "https://redmonk.com/kholterhoff/2026/02/26/generative-ai-policy-landscape-in-open-source/"
+  ]
+}
