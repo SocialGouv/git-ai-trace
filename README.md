@@ -46,14 +46,23 @@ The skill has three non-negotiable rules:
 
 **In the commit, not in a file.** The recap lives in the commit message body, between `--- session-recap ---` and `--- end-recap ---` delimiters. It travels with the commit through rebases, squashes, and cherry-picks. A separate file would break on all three and generate merge conflicts on parallel branches.
 
-## Related work
+## Where it comes from
 
-The skill draws from two explicit antecedents:
+In the spirit of transparency this tool preaches: `git-ai-trace` is not the derivation of prior art. It is the product of [a specific brainstorming chat](https://claude.ai/share/6890bda1-eb81-4371-8ac3-7a0054230a21) with Claude Opus 4.7, where a vague dissatisfaction with existing AI-attribution schemes got talked into the "presences-only moments in the commit message" form you see here. Proof that observation-only attribution matters: the tool that preaches it is itself a traceable artifact of an observable chat.
 
-- **[TCP/UP](https://tcp-up.org/)** — a declarative protocol for editorial transparency with five labels (HUC, HCA, HCE, ACE, AIC) distinguishing human-centric from AI-centric content. `git-ai-trace` keeps the good-faith philosophy and the commitment to justifiable sincerity, but drops the labels as too coarse for code.
-- **[AI_ATTRIBUTION.md](https://github.com/ismet55555/ai-attribution)** (Ismet Handzic) — a chronological log of creative control with six involvement levels. `git-ai-trace` keeps the idea of recording moments over time, but drops both the levels (still a categorization) and the separate file (broken by git operations).
+Two projects partially shaped the thinking during that session — not ancestors, but neighbors pushed against until a different shape emerged:
 
-The skill's own structure (presences, observable, in-commit) emerged from the design trade-offs these two approaches surfaced. See `docs/design-rationale.md` for the longer story.
+- **[TCP/UP](https://tcp-up.org/)** — a declarative protocol for editorial transparency with five labels (HUC, HCA, HCE, ACE, AIC). `git-ai-trace` shares its good-faith philosophy and commitment to justifiable sincerity, but takes a different path: moments over labels, code-scale granularity over document-scale, in-commit over alongside-the-document.
+- **[AI_ATTRIBUTION.md](https://github.com/ismet55555/ai-attribution)** (Ismet Handzic) — a chronological log of creative control with six involvement levels. `git-ai-trace` shares the chronological-moments intuition, but takes a different path: no levels (still a categorization), no separate file (broken by rebases/squashes/cherry-picks).
+
+### Further reading (adjacent, not ancestors)
+
+Broader context on how open source is working out its relationship with generative AI:
+
+- [**open-source-ai-contribution-policies**](https://github.com/melissawm/open-source-ai-contribution-policies) (Melissa Weber Mendonça) — a collected survey of how different OSS projects handle AI-assisted contributions in their policies.
+- [**The generative-AI policy landscape in open source**](https://redmonk.com/kholterhoff/2026/02/26/generative-ai-policy-landscape-in-open-source/) (Kate Holterhoff, RedMonk) — a landscape analysis of the policy choices OSS communities are making and the tensions between them.
+
+`git-ai-trace` sits in the *"how do we record what happened"* corner of that policy space — orthogonal to *"do we accept AI contributions at all"* (which is the question most of those policies actually answer). See `docs/design-rationale.md` for the longer story of how the brainstorming session landed on this corner.
 
 ## Components
 
@@ -81,27 +90,24 @@ The **extractor** (`recap-log.sh`) regenerates a chronological `AI_CONTRIB.md`-s
 
 ## Installation
 
-### As a Claude Code skill
+### The skill — one-liner
 
 ```bash
-# Per-project (committable, shared with the team)
-mkdir -p .claude/skills/git-ai-trace
-cp -r SKILL.md hooks/ scripts/ .claude/skills/git-ai-trace/
-chmod +x .claude/skills/git-ai-trace/hooks/claude-code/pre-commit-recap.sh
-chmod +x .claude/skills/git-ai-trace/hooks/git/*
-chmod +x .claude/skills/git-ai-trace/scripts/recap-log.sh
+npx skills add SocialGouv/git-ai-trace
 ```
 
-Or globally under `~/.claude/skills/git-ai-trace/` for all your projects.
+Installs per-project by default (`.claude/skills/git-ai-trace/`). Add `-g` for user-global (`~/.claude/skills/git-ai-trace/`). The [`skills`](https://github.com/vercel-labs/agent-skills) CLI handles clone, copy, and agent wiring.
 
 Claude auto-invokes the skill when the conversation matches its description ("let's commit", "recap this session", etc.). You can also invoke it explicitly with `/git-ai-trace`.
 
-### With the hooks
+### The hooks (optional, but recommended)
 
-See `hooks/README.md` for the three hooks. Short version:
+The skill alone relies on Claude or the developer remembering to produce a recap. The three hooks enforce the discipline automatically, across every entry point to `git commit`. They are **not** installed by `npx skills add` — pick up from here manually:
 
-- **Claude Code hook**: add a `PreToolUse` entry in `.claude/settings.json` that runs `hooks/claude-code/pre-commit-recap.sh` on `git commit*`.
-- **Native git hooks**: copy `hooks/git/prepare-commit-msg` and `hooks/git/commit-msg` into `.git/hooks/` (or use `core.hooksPath` for team sharing).
+- **Claude Code hook** — add a `PreToolUse` entry in `.claude/settings.json` pointing at `.claude/skills/git-ai-trace/hooks/claude-code/pre-commit-recap.sh` with a `git commit` matcher.
+- **Native git hooks** — copy `.claude/skills/git-ai-trace/hooks/git/prepare-commit-msg` and `commit-msg` into `.git/hooks/`, or point `core.hooksPath` at the shared directory for team-wide installation.
+
+See [`hooks/README.md`](hooks/README.md) for the full contract, the `.claude/settings.json` snippet, and troubleshooting.
 
 All hooks share the same validation contract:
 
@@ -116,16 +122,32 @@ Escape hatches (the hooks let commits through without a recap when):
 - The commit is a merge, revert, or `--amend --no-edit`.
 - All staged files match trivial patterns (`.gitignore`, `README.md`, `CHANGELOG.md`, `.claude/**`, `LICENSE`).
 
+### Manual install (without `npx skills`)
+
+If you'd rather not depend on the `skills` CLI, or you want to pin a specific version:
+
+```bash
+git clone https://github.com/SocialGouv/git-ai-trace
+mkdir -p .claude/skills/git-ai-trace
+cp -r git-ai-trace/SKILL.md git-ai-trace/hooks git-ai-trace/scripts .claude/skills/git-ai-trace/
+chmod +x .claude/skills/git-ai-trace/hooks/claude-code/pre-commit-recap.sh \
+         .claude/skills/git-ai-trace/hooks/git/* \
+         .claude/skills/git-ai-trace/scripts/recap-log.sh
+```
+
+Or, once releases are published, grab the `.skill` bundle from the [GitHub release](https://github.com/SocialGouv/git-ai-trace/releases) page and unzip into `.claude/skills/` (the bundle extracts as `git-ai-trace/`).
+
 ### As a slash command only (lightest test drive)
 
-If you just want to try the skill before committing to the full install:
+If you want to try the skill on one session before committing to the full install:
 
 ```bash
 mkdir -p .claude/commands
-cp SKILL.md .claude/commands/git-ai-trace.md
+curl -sSL https://raw.githubusercontent.com/SocialGouv/git-ai-trace/main/SKILL.md \
+  -o .claude/commands/git-ai-trace.md
 ```
 
-Then `/git-ai-trace` in Claude Code. No auto-invocation, no hooks, no enforcement — just the skill content expanded on demand. Good for a first test on a real session before deciding whether to adopt the full setup.
+Then `/git-ai-trace` in Claude Code. No auto-invocation, no hooks, no enforcement — just the skill content expanded on demand.
 
 ## Generating a panoramic view
 
