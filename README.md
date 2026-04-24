@@ -48,7 +48,7 @@ The skill has three non-negotiable rules:
 
 ## Where it comes from
 
-In the spirit of transparency this tool preaches: `git-ai-trace` is not the derivation of prior art. It is the product of [a specific brainstorming chat](https://claude.ai/share/6890bda1-eb81-4371-8ac3-7a0054230a21) with Claude Opus 4.7, where a vague dissatisfaction with existing AI-attribution schemes got talked into the "presences-only moments in the commit message" form you see here. Proof that observation-only attribution matters: the tool that preaches it is itself a traceable artifact of an observable chat.
+In the spirit of transparency this tool preaches: `git-ai-trace` is not the derivation of prior art. It is the product of [a specific brainstorming chat](https://claude.ai/share/94425cfb-f4d5-4326-97c7-aac419d4f2c3) with Claude Opus 4.7, where a vague dissatisfaction with existing AI-attribution schemes got talked into the "presences-only moments in the commit message" form you see here. Proof that observation-only attribution matters: the tool that preaches it is itself a traceable artifact of an observable chat.
 
 Two projects partially shaped the thinking during that session — not ancestors, but neighbors pushed against until a different shape emerged:
 

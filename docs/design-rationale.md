@@ -1,6 +1,6 @@
 # Design rationale
 
-This document is the longer story of *why* `git-ai-trace` looks the way it does. The short version is in [`README.md`](../README.md). The brainstorming chat that produced the form you see here lives at https://claude.ai/share/6890bda1-eb81-4371-8ac3-7a0054230a21 — a later session at https://claude.ai/share/94425cfb-f4d5-4326-97c7-aac419d4f2c3 went from the design to the packaged repo.
+This document is the longer story of *why* `git-ai-trace` looks the way it does. The short version is in [`README.md`](../README.md). The brainstorming chat that produced the form you see here lives at https://claude.ai/share/94425cfb-f4d5-4326-97c7-aac419d4f2c3.
 
 ## Starting point: binary disclosure isn't enough
 
