@@ -1,0 +1,22 @@
+{
+  "git": {
+    "commitMessage": "chore: release v${version} [no-recap]",
+    "tagName": "v${version}"
+  },
+  "npm": {
+    "publish": false
+  },
+  "github": {
+    "release": true,
+    "releaseName": "v${version}"
+  },
+  "hooks": {
+    "after:bump": "bash scripts/build-skill.sh"
+  },
+  "plugins": {
+    "@release-it/conventional-changelog": {
+      "preset": "conventionalcommits",
+      "infile": false
+    }
+  }
+}

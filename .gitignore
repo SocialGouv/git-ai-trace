@@ -2,6 +2,9 @@
 dist/
 *.skill
 
+# Node / pnpm
+node_modules/
+
 # Local working dirs
 mnt/
 .claude/
