@@ -6,7 +6,7 @@
 set -euo pipefail
 
 MSG_FILE="$1"
-MESSAGE=$(cat "$MSG_FILE" | grep -v '^#' || echo "")
+MESSAGE=$(grep -v '^#' "$MSG_FILE" || echo "")
 
 TRIVIAL_PATTERNS=(
   '^\.gitignore$'
