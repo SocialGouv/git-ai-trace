@@ -1,0 +1,90 @@
+#!/usr/bin/env bash
+# git-ai-trace — git commit-msg hook.
+#
+# Backstop validation after message finalization.
+
+set -euo pipefail
+
+MSG_FILE="$1"
+MESSAGE=$(cat "$MSG_FILE" | grep -v '^#' || echo "")
+
+TRIVIAL_PATTERNS=(
+  '^\.gitignore$'
+  '^README\.md$'
+  '^CHANGELOG\.md$'
+  '^\.claude/'
+  '^LICENSE$'
+)
+
+SUBJECT=$(echo "$MESSAGE" | head -1)
+if echo "$SUBJECT" | grep -qF '[no-recap]'; then
+  exit 0
+fi
+
+if echo "$SUBJECT" | grep -qE '^(Merge|Revert) '; then
+  exit 0
+fi
+
+STAGED=$(git diff --cached --name-only 2>/dev/null || echo "")
+if [ -n "$STAGED" ]; then
+  all_trivial=true
+  while IFS= read -r file; do
+    [ -z "$file" ] && continue
+    matched=false
+    for pat in "${TRIVIAL_PATTERNS[@]}"; do
+      if echo "$file" | grep -qE "$pat"; then
+        matched=true
+        break
+      fi
+    done
+    if ! $matched; then
+      all_trivial=false
+      break
+    fi
+  done <<< "$STAGED"
+  if $all_trivial; then
+    exit 0
+  fi
+fi
+
+if ! echo "$MESSAGE" | grep -qF -- "--- session-recap ---"; then
+  cat >&2 <<EOF
+git-ai-trace: commit blocked.
+
+No recap block in the commit message. Either:
+  - add a --- session-recap --- ... --- end-recap --- block, or
+  - add [no-recap] to the subject line for a trivial commit.
+EOF
+  exit 1
+fi
+
+if ! echo "$MESSAGE" | grep -qF -- "--- end-recap ---"; then
+  echo "git-ai-trace: recap block is not closed. Add --- end-recap ---." >&2
+  exit 1
+fi
+
+BLOCK=$(echo "$MESSAGE" | awk '/--- session-recap ---/{flag=1; next} /--- end-recap ---/{flag=0} flag')
+
+WHAT_LINE=$(echo "$BLOCK" | grep -E '^What changed:' || true)
+if [ -z "$WHAT_LINE" ]; then
+  echo "git-ai-trace: missing 'What changed:' line." >&2
+  exit 1
+fi
+WHAT_VALUE=$(echo "$WHAT_LINE" | sed -E 's/^What changed:[[:space:]]*//' | tr -d '[:space:]')
+if [ -z "$WHAT_VALUE" ]; then
+  echo "git-ai-trace: 'What changed:' is empty." >&2
+  exit 1
+fi
+
+if ! echo "$BLOCK" | grep -qE '^Moments:'; then
+  echo "git-ai-trace: missing 'Moments:' line." >&2
+  exit 1
+fi
+
+MOMENT_COUNT=$(echo "$BLOCK" | grep -cE '^-[[:space:]]+(human|claude|both):[[:space:]]+.+$' || true)
+if [ "$MOMENT_COUNT" -eq 0 ]; then
+  echo "git-ai-trace: no moments recorded under 'Moments:'. At least one '- actor: action' line is required." >&2
+  exit 1
+fi
+
+exit 0

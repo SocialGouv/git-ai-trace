@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+# git-ai-trace — git prepare-commit-msg hook.
+#
+# Pre-fills the editor buffer with a minimal recap template.
+
+MSG_FILE="$1"
+SOURCE="${2:-}"
+
+case "$SOURCE" in
+  merge|squash|commit|message)
+    exit 0
+    ;;
+esac
+
+if grep -qF -- "--- session-recap ---" "$MSG_FILE"; then
+  exit 0
+fi
+
+TRIVIAL_PATTERNS=(
+  '^\.gitignore$'
+  '^README\.md$'
+  '^CHANGELOG\.md$'
+  '^\.claude/'
+  '^LICENSE$'
+)
+STAGED=$(git diff --cached --name-only 2>/dev/null || echo "")
+if [ -n "$STAGED" ]; then
+  all_trivial=true
+  while IFS= read -r file; do
+    [ -z "$file" ] && continue
+    matched=false
+    for pat in "${TRIVIAL_PATTERNS[@]}"; do
+      if echo "$file" | grep -qE "$pat"; then
+        matched=true
+        break
+      fi
+    done
+    if ! $matched; then
+      all_trivial=false
+      break
+    fi
+  done <<< "$STAGED"
+  if $all_trivial; then
+    exit 0
+  fi
+fi
+
+TEMPLATE=$(cat <<'EOF'
+
+--- session-recap ---
+What changed: 
+Moments:
+- human: 
+- claude: 
+--- end-recap ---
+
+# Record only observed moments. Each line under Moments: starts with
+# '-' then an actor (human/claude/both), then ': ', then the action.
+# Remove lines you don't need; add more if needed. ADR: <link> is an
+# optional field — add only if an architectural decision was formalized.
+# Add [no-recap] to the subject line to skip the recap for a trivial
+# commit.
+EOF
+)
+
+EXISTING=$(cat "$MSG_FILE")
+if echo "$EXISTING" | grep -qE '^#'; then
+  awk -v tmpl="$TEMPLATE" '
+    !inserted && /^#/ { print tmpl; inserted=1 }
+    { print }
+  ' "$MSG_FILE" > "$MSG_FILE.tmp" && mv "$MSG_FILE.tmp" "$MSG_FILE"
+else
+  echo "$TEMPLATE" >> "$MSG_FILE"
+fi
+
+exit 0

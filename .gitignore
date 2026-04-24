@@ -1,0 +1,13 @@
+# Derived artefacts
+dist/
+*.skill
+
+# Local working dirs
+mnt/
+.claude/
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+*.swp
